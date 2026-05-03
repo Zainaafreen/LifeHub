@@ -1,211 +1,204 @@
-# LifeHub — Personal Life Management Dashboard
+LifeHub
+Personal Life Management Dashboard
+Tasks  •  Expenses  •  Health  •  Reminders  •  Analytics
 
-A full-stack personal dashboard to manage tasks, expenses, health records, and reminders — all in one place.
+Overview
+LifeHub is a self-hosted, full-stack personal dashboard that consolidates your daily life into one secure, production-ready application. Built with a vanilla JS frontend and a Node.js/Express backend backed by PostgreSQL, it requires no cloud services or external dependencies beyond a single database.
 
----
+Version
+v1.4.0  •  Production-ready  •  No Redis required  •  Zero new dependencies in v1.3.0+
 
-## Folder Structure
+Features
 
-```
+	Feature	Description
+🔐	Authentication	JWT + bcrypt + email verification + token revocation
+✅	Tasks	Create, update, delete & track status of personal tasks
+💰	Expenses	Log and categorize spending with aggregated insights
+❤️	Health	Monitor heart rate, blood pressure & blood sugar with alerts
+⏰	Reminders	Schedule one-off or recurring reminders
+📊	Dashboard	Unified view with aggregated stats across all modules
+⚡	Rate Limiting	PostgreSQL-backed store — no Redis needed
+🔒	Security	Helmet, HTTP-only cookies, HSTS, CORS, XSS protection
+
+Prerequisites
+•	Node.js Node.js v18 or later
+•	PostgreSQL PostgreSQL v13 or later
+•	npm npm (bundled with Node.js)
+•	Email nodemailer (optional — console fallback in dev)
+
+Folder Structure
+
 lifehub/
-├── schema.sql                      ← PostgreSQL database schema
+├── schema.sql                 ← PostgreSQL database schema
+├── migrations/
+│   └── 0001_baseline.sql
 │
 ├── backend/
-│   ├── server.js                   ← Express app entry point
+│   ├── server.js              ← Express app entry point
 │   ├── package.json
-│   ├── .env.example                ← Copy to .env and fill in your values
-│   │
+│   ├── .env.example           ← Copy to .env and fill in values
 │   ├── config/
-│   │   ├── db.js                   ← PostgreSQL connection pool
-│   │   ├── rateLimitStore.js       ← PostgreSQL-backed rate-limit store (no Redis)
-│   │   └── mailer.js               ← Email verification helper (logs to console in dev)
-│   │
+│   │   ├── db.js              ← PostgreSQL connection pool
+│   │   ├── rateLimitStore.js  ← PostgreSQL-backed rate-limit store
+│   │   └── mailer.js          ← Email helper (console fallback in dev)
 │   ├── middleware/
-│   │   ├── auth.js                 ← JWT authentication middleware
-│   │   └── validateId.js           ← Integer :id param guard
-│   │
+│   │   ├── auth.js            ← JWT authentication middleware
+│   │   └── validateId.js      ← Integer :id param guard
 │   ├── controllers/
-│   │   ├── authController.js       ← register / verifyEmail / login / logout
+│   │   ├── authController.js
 │   │   ├── tasksController.js
 │   │   ├── expensesController.js
 │   │   ├── healthController.js
 │   │   ├── remindersController.js
 │   │   └── dashboardController.js
-│   │
 │   └── routes/
-│       ├── auth.js
-│       ├── tasks.js
-│       ├── expenses.js
-│       ├── health.js
-│       ├── reminders.js
-│       └── dashboard.js
+│       ├── auth.js  tasks.js  expenses.js
+│       └── health.js  reminders.js  dashboard.js
 │
 └── frontend/
     ├── index.html
     ├── css/style.css
     ├── js/
-    │   ├── app.js
-    │   ├── auth.js
-    │   ├── dashboard.js
-    │   ├── tasks.js
-    │   ├── expenses.js
-    │   ├── health.js
-    │   └── reminders.js
+    │   ├── app.js  auth.js  dashboard.js
+    │   ├── tasks.js  expenses.js
+    │   └── health.js  reminders.js
     └── pages/
-        ├── login.html
-        ├── tasks.html
-        ├── expenses.html
-        ├── health.html
-        └── reminders.html
-```
+        ├── login.html  tasks.html  expenses.html
+        └── health.html  reminders.html
 
----
-
-## Prerequisites
-
-- **Node.js** v18 or later
-- **PostgreSQL** v13 or later
-- npm
-
----
-
-## Setup Instructions
-
-### 1. Create the PostgreSQL database
-
-```bash
+Setup Instructions
+1 — Create the PostgreSQL database
 psql -U postgres
 CREATE DATABASE lifehub;
 \q
-```
 
-### 2. Run the schema
-
-```bash
+2 — Run the schema
 psql -U postgres -d lifehub -f schema.sql
-```
+# or apply migrations:
+psql -U postgres -d lifehub -f migrations/0001_baseline.sql
 
-### 3. Configure environment variables
-
-```bash
+3 — Configure environment variables
 cd backend
 cp .env.example .env
-```
+# Generate a strong JWT secret:
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
-Open `.env` and fill in your values. At minimum:
-
-```
-PORT=5000
-NODE_ENV=development
-JWT_SECRET=<generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=lifehub
-DB_USER=postgres
-DB_PASSWORD=yourpassword
-APP_BASE_URL=http://localhost:5000
-```
-
-### 4. Install backend dependencies
-
-```bash
+4 — Install dependencies
 cd backend
 npm install
-```
-
-To also install the optional nodemailer package for production email:
-
-```bash
+ 
+# Optional: production email support
 npm install nodemailer
-```
 
-### 5. Start the server
-
-```bash
+5 — Start the server
 # Production
 npm start
-
-# Development (auto-restarts on file changes)
+ 
+# Development (auto-restart on changes)
 npm run dev
-```
+ 
+# Server starts at http://localhost:5000
 
-The server starts at **http://localhost:5000**
+Environment Variables
+Copy backend/.env.example to backend/.env and fill in the values below. Variables marked REQUIRED in production will cause the server to refuse startup if missing.
 
----
+Variable	Example Value	Notes
+PORT	5000	Server port
+NODE_ENV	development / production	Controls SMTP enforcement, HSTS
+JWT_SECRET	<64-byte hex string>	REQUIRED — must not be default placeholder
+DATABASE_URL	postgres://user:pass@host:5432/db	Full PostgreSQL connection string
+DB_SSL_CA	<path to CA cert>	Optional — needed when DB requires TLS
+ALLOWED_ORIGIN	https://yourdomain.com	Comma-separated CORS origins
+APP_BASE_URL	https://yourdomain.com	Used in email verification links
+SMTP_HOST	smtp.gmail.com	Required in production
+SMTP_PORT	587	Required in production
+SMTP_USER	you@gmail.com	Required in production
+SMTP_PASS	<app password>	Required in production
+SMTP_FROM	LifeHub <you@gmail.com>	Display name in outbound emails
+LOG_LEVEL	info	Pino log level: trace/debug/info/warn/error
 
-## API Endpoints
+API Reference
+All endpoints are prefixed with /api. Protected routes require a valid JWT sent as an HTTP-only cookie.
 
-### Auth — `/api/auth`
+Method	Endpoint	Description
+POST	/api/auth/register	Register new account; sends verification email
+GET	/api/auth/verify-email?token=<hex>	Activate account via email link
+POST	/api/auth/resend-verification	Resend verification email
+POST	/api/auth/login	Authenticate; sets HTTP-only JWT cookie
+POST	/api/auth/logout	Revoke token & clear cookie
+GET	/api/tasks	List all tasks for authenticated user
+POST	/api/tasks	Create a new task
+PUT	/api/tasks/:id	Update a task
+DELETE	/api/tasks/:id	Delete a task
+GET	/api/expenses	List expenses
+POST	/api/expenses	Log an expense
+GET	/api/health	List health records
+POST	/api/health	Add a health record (triggers alerts if needed)
+GET	/api/reminders	List reminders
+POST	/api/reminders	Create a reminder
+GET	/api/dashboard	Aggregated stats across all modules
 
-| Method | Path | Description | Auth required |
-|--------|------|-------------|---------------|
-| POST | `/api/auth/register` | Register new user (sends verification email) | No |
-| GET  | `/api/auth/verify-email?token=<hex>` | Verify email address | No |
-| POST | `/api/auth/resend-verification` | Resend verification email | No |
-| POST | `/api/auth/login` | Login (requires verified email) | No |
-| GET  | `/api/auth/me` | Get current user | Yes |
-| POST | `/api/auth/logout` | Logout + revoke token | Yes |
+Email Verification Flow
 
-### Tasks, Expenses, Health, Reminders, Dashboard
+1.	User registers → a verification token is created in email_verify_tokens (24-hour expiry).
+2.	Dev mode (no SMTP): token is printed to the server console and returned as devVerifyToken in the registration response.
+3.	Production (SMTP configured): a verification link is sent to the user's email.
+4.	User clicks the link → GET /api/auth/verify-email?token=<hex> → account marked verified = TRUE.
+5.	User can now log in — unverified accounts receive 403 EMAIL_NOT_VERIFIED.
+6.	The login page shows a "Resend verification email" button on this error.
 
-Same as before — see original README sections.
+Gmail Setup
+Go to Google Account → Security → 2-Step Verification → App Passwords → generate one for 'Mail'. Use this as SMTP_PASS — never your real Gmail password.
 
----
+Security
 
-## Email Verification Flow
+•	JWT stored in HTTP-only cookies — prevents XSS token theft
+•	Token revocation on logout — invalidated tokens are rejected
+•	Helmet — sets secure HTTP headers (X-Frame-Options, CSP, etc.)
+•	HSTS — enforces HTTPS in production via Strict-Transport-Security
+•	Rate limiting — backed by PostgreSQL, survives server restarts
+•	Zod validation — all incoming request bodies are schema-validated
+•	Email verification — accounts cannot log in until verified
 
-1. User registers → a verification token is created in `email_verify_tokens` (24 h expiry)
-2. **Dev mode** (no SMTP configured): token is printed to the server console and returned as `devVerifyToken` in the registration response
-3. **Production** (SMTP configured): an email is sent with a verification link
-4. User clicks the link → `GET /api/auth/verify-email?token=<hex>` → account marked `verified = TRUE`
-5. User can now log in — unverified accounts receive `403 EMAIL_NOT_VERIFIED`
-6. The login page shows a "Resend verification email" button when this error occurs
+Production Fixes (v1.3.0)
+All five pre-production issues resolved with zero new required dependencies.
 
-To enable production email, set these env vars (any SMTP provider works):
+#	Issue	Fix
+1	JWT in localStorage (XSS risk)	Moved to HTTP-only cookie via credentials: 'include'
+2	In-memory rate limiter (resets on restart)	PgRateLimitStore — counters persist in rate_limit_hits table
+3	No HTTPS redirect	trust proxy + x-forwarded-proto redirect; HSTS via Helmet
+4	No email verification	email_verify_tokens table; works without SMTP in dev (console fallback)
+5	cleanup_expired_tokens() never scheduled	setInterval in server.js runs cleanup_expired_rows() every hour
 
-```
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=you@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM=LifeHub <you@gmail.com>
-APP_BASE_URL=https://yourdomain.com
-```
+Health Alert Thresholds
+The health module triggers an alert in the dashboard when any logged metric exceeds these thresholds:
 
----
+Metric	Alert Condition
+Heart Rate	> 100 bpm or < 50 bpm
+Systolic BP	> 140 mmHg
+Diastolic BP	> 90 mmHg
+Blood Sugar	> 140 mg/dL
 
-## Production Fixes (v1.3.0)
+Tech Stack
 
-All five pre-production issues fixed with **zero new required dependencies** — same stack throughout.
+Layer	Technology
+Frontend	HTML5, CSS3, Vanilla JavaScript
+Backend	Node.js + Express.js
+Database	PostgreSQL v13+
+Authentication	JWT (jsonwebtoken) + bcryptjs
+DB Driver	node-postgres (pg)
+Email (optional)	nodemailer — console fallback in dev
+Security	Helmet, cors, express-rate-limit, cookie-parser
+Logging	Pino
+Validation	Zod
 
-| # | Issue | Fix |
-|---|-------|-----|
-| 1 | Frontend used `localStorage` for JWT | Already fixed in previous refactor — `app.js` uses httpOnly cookie via `credentials: 'include'` |
-| 2 | Rate limiter used in-memory store (reset on restart) | New `PgRateLimitStore` in `config/rateLimitStore.js` — counters persist in `rate_limit_hits` table |
-| 3 | No HTTPS redirect | `trust proxy` + `x-forwarded-proto` redirect in `server.js`; HSTS header added via Helmet |
-| 4 | No email verification | `email_verify_tokens` table + `verifyEmail` / `resendVerification` controller functions; works without SMTP in dev |
-| 5 | `cleanup_expired_tokens()` never scheduled | `setInterval` in `server.js` calls `cleanup_expired_rows()` every hour; clears revoked tokens, rate-limit hits, and expired verify tokens |
+Future Improvements
+•	Password change endpoint for logged-in users
+•	Advanced analytics dashboard with charts and trends
+•	Mobile-responsive UI overhaul
+•	Notification system (email / SMS) for reminders and health alerts
+•	Data export (CSV / PDF) for expenses and health records
+•	Two-factor authentication (TOTP)
+•	Docker Compose file for one-command local setup
 
----
-
-## Health Alert Thresholds
-
-| Metric | Alert Condition |
-|--------|----------------|
-| Heart Rate | > 100 bpm or < 50 bpm |
-| Systolic BP | > 140 mmHg |
-| Diastolic BP | > 90 mmHg |
-| Blood Sugar | > 140 mg/dL |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | HTML5, CSS3, Vanilla JS |
-| Backend | Node.js + Express.js |
-| Database | PostgreSQL |
-| Auth | JWT (jsonwebtoken) + bcryptjs |
-| DB Driver | node-postgres (pg) |
-| Email (optional) | nodemailer (optional dep — console fallback in dev) |
+LifeHub  •  Personal Life Management Dashboard  •  v1.4.0
