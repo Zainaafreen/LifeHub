@@ -1,0 +1,32 @@
+# Caddyfile — LifeHub reverse proxy with automatic TLS
+#
+# Set the DOMAIN environment variable before running:
+#   DOMAIN=yourdomain.com docker compose up -d
+#
+# Caddy automatically obtains and renews a Let's Encrypt certificate.
+# HTTP (port 80) is redirected to HTTPS automatically.
+
+{$DOMAIN} {
+  # Reverse-proxy everything to the backend container
+  reverse_proxy backend:5000
+
+  # Forward real client IP through the proxy
+  header_up X-Real-IP {remote_host}
+  header_up X-Forwarded-Proto {scheme}
+
+  # Security headers (Caddy adds HSTS when TLS is enabled automatically)
+  header {
+    # Protect against clickjacking
+    X-Frame-Options "SAMEORIGIN"
+    # Prevent MIME sniffing
+    X-Content-Type-Options "nosniff"
+    # Referrer policy
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  # Logging
+  log {
+    output stderr
+    format console
+  }
+}

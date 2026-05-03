@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeHub – Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="auth-page">
+<div class="auth-layout">
+
+  <!-- Hero Panel -->
+  <div class="auth-hero">
+    <div class="auth-hero-brand">LifeHub</div>
+    <p class="auth-hero-tagline">Your personal command centre for tasks, finances, health, and reminders — all in one place.</p>
+
+    <div class="auth-features">
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">✅</div>
+        <span>Task management with completion tracking</span>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">💰</div>
+        <span>Expense tracker with income/balance summary</span>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">❤️</div>
+        <span>Health monitor with abnormal value alerts</span>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">🔔</div>
+        <span>Reminders with date &amp; time scheduling</span>
+      </div>
+    </div>
+
+    <div class="auth-demo-card">
+      <h2>Everything Unified</h2>
+      <p>Your <strong>Dashboard</strong> gives you a real-time snapshot of every area of your life, powered by a secure JWT-authenticated REST API.</p>
+    </div>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-card-wrap">
+
+    <!-- LOGIN -->
+    <div id="login-section">
+      <div class="auth-card card">
+        <div class="auth-header">
+          <h2>Welcome back</h2>
+          <p>Sign in to your LifeHub account</p>
+        </div>
+        <form class="auth-form" id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email address</label>
+            <input class="form-input" type="email" id="login-email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+          </div>
+          <div style="text-align:right; margin-top:-6px; margin-bottom:8px;">
+            <a href="/pages/reset-password.html" class="text-sm text-purple font-semibold">Forgot password?</a>
+          </div>
+          <div class="auth-submit">
+            <button type="submit" class="btn btn-primary w-full">Sign in</button>
+          </div>
+        </form>
+
+        <!-- Shown only when login returns EMAIL_NOT_VERIFIED -->
+        <div id="resend-section" style="display:none; margin-top:14px; text-align:center;">
+          <p class="text-sm text-muted">Didn't get the email?</p>
+          <button id="resend-btn" class="btn btn-secondary" style="margin-top:6px;">Resend verification email</button>
+        </div>
+
+        <p class="text-sm text-muted mt-3" style="text-align:center">
+          Don't have an account?
+          <a href="#" id="show-register" class="text-purple font-semibold">Create one</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-section" style="display:none">
+      <div class="auth-card card">
+        <div class="auth-header">
+          <h2>Create account</h2>
+          <p>Start managing your life with LifeHub</p>
+        </div>
+        <form class="auth-form" id="register-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full name</label>
+            <input class="form-input" type="text" id="reg-name" placeholder="Jane Smith" autocomplete="name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Email address</label>
+            <input class="form-input" type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password <span class="text-muted">(min 8 chars)</span></label>
+            <input class="form-input" type="password" id="reg-password" placeholder="••••••••" autocomplete="new-password" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-confirm">Confirm password</label>
+            <input class="form-input" type="password" id="reg-confirm" placeholder="••••••••" autocomplete="new-password" required />
+          </div>
+          <div class="auth-submit">
+            <button type="submit" class="btn btn-primary w-full">Create account</button>
+          </div>
+        </form>
+        <p class="text-sm text-muted mt-3" style="text-align:center">
+          Already have an account?
+          <a href="#" id="show-login" class="text-purple font-semibold">Sign in</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- VERIFY PROMPT (shown after successful registration) -->
+    <div id="verify-section" style="display:none">
+      <div class="auth-card card" style="text-align:center">
+        <div style="font-size:2.5rem; margin-bottom:12px">📧</div>
+        <div class="auth-header">
+          <h2>Check your email</h2>
+          <p id="verify-message">We've sent a verification link to your email address. Click it to activate your account, then sign in.</p>
+        </div>
+        <button id="back-to-login" class="btn btn-secondary w-full" style="margin-top:16px">Back to sign in</button>
+        <p class="text-sm text-muted mt-3">
+          Didn't receive it?
+          <a href="#" id="verify-resend" class="text-purple font-semibold">Resend</a>
+        </p>
+      </div>
+    </div>
+
+
+    <!-- FORGOT PASSWORD -->
+    <div id="forgot-section" style="display:none">
+      <div class="auth-card card">
+        <div class="auth-header">
+          <h2>Reset password</h2>
+          <p>Enter your email and we'll send you a reset link</p>
+        </div>
+        <form class="auth-form" id="forgot-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Email address</label>
+            <input class="form-input" type="email" id="forgot-email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="auth-submit">
+            <button type="submit" class="btn btn-primary w-full">Send reset link</button>
+          </div>
+        </form>
+        <p class="text-sm text-muted mt-3" style="text-align:center">
+          <a href="#" id="forgot-back" class="text-purple font-semibold">&#8592; Back to sign in</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- FORGOT SUCCESS -->
+    <div id="forgot-sent-section" style="display:none">
+      <div class="auth-card card" style="text-align:center">
+        <div style="font-size:2.5rem; margin-bottom:12px">🔑</div>
+        <div class="auth-header">
+          <h2>Check your email</h2>
+          <p>If that email is registered, a reset link has been sent. It expires in 1 hour.</p>
+        </div>
+        <button id="forgot-sent-back" class="btn btn-secondary w-full" style="margin-top:16px">Back to sign in</button>
+      </div>
+    </div>
+
+  </div><!-- /auth-card-wrap -->
+</div><!-- /auth-layout -->
+
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

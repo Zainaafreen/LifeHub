@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeHub – Health</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <button class="nav-toggle" id="nav-toggle">☰</button>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">LifeHub</div>
+      <div class="logo-sub">Personal Dashboard</div>
+    </div>
+    <span class="nav-section-label">Overview</span>
+    <a href="/index.html"           class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+    <span class="nav-section-label">Manage</span>
+    <a href="/pages/tasks.html"     class="nav-link"><span class="nav-icon">✅</span> Tasks</a>
+    <a href="/pages/expenses.html"  class="nav-link"><span class="nav-icon">💰</span> Expenses</a>
+    <a href="/pages/health.html"    class="nav-link active"><span class="nav-icon">❤️</span> Health</a>
+    <a href="/pages/reminders.html" class="nav-link"><span class="nav-icon">🔔</span> Reminders</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">U</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-email" id="sidebar-user-email">&nbsp;</div>
+        </div>
+      </div>
+      <button class="btn btn-outline w-full" id="logout-btn">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header flex items-center justify-between">
+      <div>
+        <h1>Health Tracker</h1>
+        <p id="today-date"></p>
+      </div>
+      <button class="btn btn-primary" id="add-health-btn">+ Log Reading</button>
+    </div>
+
+    <!-- Latest snapshot stat cards -->
+    <div class="stats-grid" style="margin-bottom:24px">
+      <div class="stat-card rose" id="hstat-heart-card">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-info">
+          <div class="stat-label">Heart Rate</div>
+          <div class="stat-value" id="hstat-heart">—</div>
+          <div class="stat-sub">normal: 50–100 bpm</div>
+        </div>
+      </div>
+      <div class="stat-card sky" id="hstat-bp-card">
+        <div class="stat-icon">🩸</div>
+        <div class="stat-info">
+          <div class="stat-label">Blood Pressure</div>
+          <div class="stat-value" id="hstat-systolic">—</div>
+          <div class="stat-sub">normal: ≤140/90 mmHg</div>
+        </div>
+      </div>
+      <div class="stat-card butter" id="hstat-sugar-card">
+        <div class="stat-icon">🩺</div>
+        <div class="stat-info">
+          <div class="stat-label">Blood Sugar</div>
+          <div class="stat-value" id="hstat-sugar">—</div>
+          <div class="stat-sub">normal: ≤140 mg/dL</div>
+        </div>
+      </div>
+      <div class="stat-card lavender">
+        <div class="stat-icon">🕐</div>
+        <div class="stat-info">
+          <div class="stat-label">Last Logged</div>
+          <div class="stat-value" style="font-size:0.85rem" id="hstat-date">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Classification legend -->
+    <div class="card" style="margin-bottom:20px;padding:16px 22px">
+      <h2 class="card-title" style="margin-bottom:12px;font-size:0.95rem">Classification Guide</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span style="background:var(--mint);color:var(--mint-text);border:1px solid var(--mint-border);padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:600">✅ Normal</span>
+        <span style="background:var(--butter);color:var(--butter-text);border:1px solid var(--butter-border);padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:600">🟡 Moderate</span>
+        <span style="background:var(--rose);color:var(--rose-text);border:1px solid var(--rose-border);padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:600">⚠️ High</span>
+        <span style="background:var(--rose);color:var(--red);border:1px solid var(--rose-border);padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:700">🚨 Critical — SOS</span>
+        <span style="background:var(--sky);color:var(--sky-text);border:1px solid var(--sky-border);padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:600">🔵 Low</span>
+      </div>
+    </div>
+
+    <!-- Trend analysis panel (populated by JS) -->
+    <div class="card" id="trend-panel" style="margin-bottom:20px;padding:18px 22px;display:none">
+      <h2 class="card-title" style="margin-bottom:14px">📊 Trend Analysis — Last 5 Readings</h2>
+      <div id="trend-content"></div>
+    </div>
+
+    <!-- Fix #4: History table with Analyse button per row, 7 columns -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="card-title" style="margin-bottom:0">Health History</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>Heart Rate</th>
+              <th>Blood Pressure</th>
+              <th>Blood Sugar</th>
+              <th>Notes</th>
+              <th>Analysis</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody id="health-table-body">
+            <tr><td colspan="7"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Log Reading Modal -->
+<div class="modal-overlay" id="health-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Log Health Reading</h3>
+      <button class="modal-close" data-close-modal>✕</button>
+    </div>
+    <form id="health-form" novalidate>
+      <p class="text-sm text-muted mb-3">Fill at least one metric. Analysis and alerts are shown immediately after saving.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="h-heart">Heart Rate <span class="text-muted">(bpm)</span></label>
+        <input class="form-input" type="number" id="h-heart" min="1" max="300" placeholder="e.g. 72" />
+        <div class="form-hint">Normal: 50–100 · Alert if &lt;50 or &gt;100 · Critical if &lt;40 or &gt;150</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="h-systolic">Systolic BP <span class="text-muted">(mmHg)</span></label>
+          <input class="form-input" type="number" id="h-systolic" min="1" max="300" placeholder="e.g. 120" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="h-diastolic">Diastolic BP <span class="text-muted">(mmHg)</span></label>
+          <input class="form-input" type="number" id="h-diastolic" min="1" max="200" placeholder="e.g. 80" />
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:-10px;margin-bottom:16px">Normal: ≤140/90 · Critical if &gt;180/120</div>
+
+      <div class="form-group">
+        <label class="form-label" for="h-sugar">Blood Sugar <span class="text-muted">(mg/dL)</span></label>
+        <input class="form-input" type="number" id="h-sugar" min="1" step="0.1" placeholder="e.g. 95" />
+        <div class="form-hint">Normal: 70–140 · Low if &lt;70 · Critical if &gt;300</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="h-notes">Notes <span class="text-muted">(optional)</span></label>
+        <textarea class="form-input" id="h-notes" rows="2" placeholder="Any symptoms or context…"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save &amp; Analyse</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Fix #4: Analysis Result Modal -->
+<div class="modal-overlay" id="analysis-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Health Analysis</h3>
+      <button class="modal-close" data-close-modal>✕</button>
+    </div>
+    <div id="analysis-content">
+      <div class="spinner"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline w-full" data-close-modal>Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script src="/js/health.js"></script>
+</body>
+</html>

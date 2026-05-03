@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV:       ${NODE_ENV:-production}
+      PORT:           5000
+      DATABASE_URL:   ${DATABASE_URL}
+      JWT_SECRET:     ${JWT_SECRET:?JWT_SECRET must be set — run: openssl rand -hex 32}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-https://${DOMAIN:-localhost}}
+      APP_BASE_URL:   ${APP_BASE_URL:-https://${DOMAIN:-localhost}}
+      LOG_LEVEL:      ${LOG_LEVEL:-info}
+      # SMTP — optional; email routes return 503 when not configured
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    # Port 5000 is NOT exposed to the host — Caddy proxies to it internally.
+    expose:
+      - "5000"
+    healthcheck:
+      test:         ["CMD", "wget", "-qO-", "http://localhost:5000/healthz"]
+      interval:     30s
+      timeout:      5s
+      start_period: 30s
+      retries:      3
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+
+volumes:
+  caddy_data:
+  caddy_config:

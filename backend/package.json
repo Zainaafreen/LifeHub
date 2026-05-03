@@ -1,0 +1,46 @@
+{
+  "name": "lifehub-backend",
+  "version": "1.4.0",
+  "description": "LifeHub Personal Dashboard - Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node ../scripts/migrate.js && node server.js",
+    "dev": "nodemon server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest --testPathPattern=tests/ --forceExit --runInBand",
+    "test:watch": "jest --testPathPattern=tests/ --watch --runInBand",
+    "migrate": "node ../scripts/migrate.js",
+    "migrate:status": "node ../scripts/migrate.js --status"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 15000
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3",
+    "pino": "^9.3.2",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
+  },
+  "optionalDependencies": {
+    "nodemailer": "^6.10.1",
+    "pino-pretty": "^11.2.2"
+  }
+}

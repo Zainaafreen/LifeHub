@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeHub – Expenses</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <button class="nav-toggle" id="nav-toggle">☰</button>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">LifeHub</div>
+      <div class="logo-sub">Personal Dashboard</div>
+    </div>
+    <span class="nav-section-label">Overview</span>
+    <a href="/index.html"           class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+    <span class="nav-section-label">Manage</span>
+    <a href="/pages/tasks.html"     class="nav-link"><span class="nav-icon">✅</span> Tasks</a>
+    <a href="/pages/expenses.html"  class="nav-link active"><span class="nav-icon">💰</span> Expenses</a>
+    <a href="/pages/health.html"    class="nav-link"><span class="nav-icon">❤️</span> Health</a>
+    <a href="/pages/reminders.html" class="nav-link"><span class="nav-icon">🔔</span> Reminders</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">U</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-email" id="sidebar-user-email">&nbsp;</div>
+        </div>
+      </div>
+      <button class="btn btn-outline w-full" id="logout-btn">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header flex items-center justify-between">
+      <div>
+        <h1>Expenses</h1>
+        <p id="today-date"></p>
+      </div>
+      <button class="btn btn-primary" id="add-expense-btn">+ Add Transaction</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid" style="margin-bottom:24px">
+      <div class="stat-card mint">
+        <div class="stat-icon">⬆️</div>
+        <div class="stat-info">
+          <div class="stat-label">Total Income</div>
+          <div class="stat-value" id="estat-income">—</div>
+        </div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-icon">⬇️</div>
+        <div class="stat-info">
+          <div class="stat-label">Total Expenses</div>
+          <div class="stat-value" id="estat-expense">—</div>
+        </div>
+      </div>
+      <div class="stat-card mint" id="balance-stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <div class="stat-label">Net Balance</div>
+          <div class="stat-value" id="estat-balance">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="card-title" style="margin-bottom:0">Transactions</h2>
+        <select class="form-input" id="expense-filter" style="width:auto;padding:6px 12px">
+          <option value="all">All</option>
+          <option value="income">Income only</option>
+          <option value="expense">Expenses only</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="expenses-table-body">
+            <tr><td colspan="6"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Transaction</h3>
+      <button class="modal-close" data-close-modal>✕</button>
+    </div>
+    <form id="expense-form" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="exp-type">Type</label>
+          <select class="form-input" id="exp-type" required>
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="exp-amount">Amount (₹)</label>
+          <input class="form-input" type="number" id="exp-amount" min="0.01" step="0.01" placeholder="0.00" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="exp-category">Category</label>
+        <input class="form-input" type="text" id="exp-category" placeholder="e.g. Food, Salary, Rent" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="exp-description">Description <span class="text-muted">(optional)</span></label>
+        <input class="form-input" type="text" id="exp-description" placeholder="Short description" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="exp-date">Date</label>
+        <input class="form-input" type="date" id="exp-date" required />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Transaction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script src="/js/expenses.js"></script>
+</body>
+</html>
