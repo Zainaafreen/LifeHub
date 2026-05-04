@@ -93,8 +93,8 @@ async function register(req, res) {
 
 // ── GET /api/auth/verify-email?token=<hex> ───────────────────
 async function verifyEmail(req, res) {
+  const reqLog = logger.forRequest(req.id);
   try {
-    const reqLog = logger.forRequest(req.id);
     const { token } = req.query;
 
     if (!token || !/^[0-9a-f]{64}$/.test(token)) {
@@ -176,8 +176,8 @@ async function resendVerification(req, res) {
 
 // ── POST /api/auth/forgot-password ───────────────────────────
 async function forgotPassword(req, res) {
+  const reqLog = logger.forRequest(req.id);
   try {
-    const reqLog = logger.forRequest(req.id);
     const { email } = req.body;
 
     const result = await pool.query(
@@ -218,15 +218,15 @@ async function forgotPassword(req, res) {
     reqLog.info({ userId: user.id }, 'Password reset requested');
     res.json(genericOk);
   } catch (err) {
-    reqLog.error({ err }, 'forgotPassword error',err);
+    reqLog.error({ err }, 'forgotPassword error');
     res.status(500).json({ error: 'Server error' });
   }
 }
 
 // ── POST /api/auth/reset-password ────────────────────────────
 async function resetPassword(req, res) {
+  const reqLog = logger.forRequest(req.id);
   try {
-    const reqLog = logger.forRequest(req.id);
     const { token, password } = req.body;
 
     const result = await pool.query(
@@ -300,8 +300,8 @@ async function login(req, res) {
 
 // ── GET /api/auth/me ─────────────────────────────────────────
 async function me(req, res) {
+  const reqLog = logger.forRequest(req.id);
   try {
-    const reqLog = logger.forRequest(req.id);
     const result = await pool.query(
       'SELECT id, name, email, created_at FROM users WHERE id = $1',
       [req.userId]
@@ -318,8 +318,8 @@ async function me(req, res) {
 
 // ── POST /api/auth/logout ────────────────────────────────────
 async function logout(req, res) {
+  const reqLog = logger.forRequest(req.id);
   try {
-    const reqLog = logger.forRequest(req.id);
     if (req.token) await revokeToken(req.token);
     res.clearCookie('lh_token', clearCookieOptions());
     reqLog.info({ userId: req.userId }, 'User logged out');
