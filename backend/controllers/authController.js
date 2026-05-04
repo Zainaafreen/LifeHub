@@ -8,17 +8,29 @@ const { revokeToken }             = require('../middleware/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
 
 // ── Cookie settings ──────────────────────────────────────────
-// Shortened from 7 days to 2 days (warning fix).
-// If the DB is unreachable and a revoked token can't be checked, the
-// window during which a stale token stays technically valid is now ≤48 h
-// rather than a full week.
+// Frontend and backend are deployed on different Render origins, so the
+// auth cookie must be allowed in cross-site requests. Using SameSite=Strict
+// causes login to "succeed" and then /api/auth/me immediately returns 401
+// because the browser will not send the cookie back on frontend → backend
+// fetches.
 const TOKEN_EXPIRY_SECS = 2 * 24 * 60 * 60; // 2 days
 function cookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    sameSite: 'strict',
-    secure:   process.env.NODE_ENV === 'production',
+    sameSite: isProd ? 'none' : 'lax',
+    secure:   isProd,
     maxAge:   TOKEN_EXPIRY_SECS * 1000,
+    path:     '/',
+  };
+}
+
+function clearCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    sameSite: isProd ? 'none' : 'lax',
+    secure:   isProd,
     path:     '/',
   };
 }
@@ -312,7 +324,7 @@ async function logout(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
     if (req.token) await revokeToken(req.token);
-    res.clearCookie('lh_token', { path: '/', sameSite: 'strict', httpOnly: true });
+    res.clearCookie('lh_token', clearCookieOptions());
     reqLog.info({ userId: req.userId }, 'User logged out');
     res.json({ message: 'Logged out successfully' });
   } catch (err) {
@@ -361,7 +373,7 @@ async function deleteAccount(req, res) {
 
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
 
-    res.clearCookie('lh_token', { path: '/', sameSite: 'strict', httpOnly: true });
+    res.clearCookie('lh_token', clearCookieOptions());
     reqLog.info({ userId: req.userId }, 'Account deleted');
     res.json({ message: 'Account deleted successfully' });
   } catch (err) {
