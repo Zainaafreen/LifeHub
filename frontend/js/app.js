@@ -79,7 +79,7 @@ function escHtml(s) {
 // can return 401 while it wakes up. We suppress apiFetch 401-redirects
 // during a short grace window so the pollers don't evict a legitimate user.
 const _PAGE_LOAD_TS      = Date.now();
-const _COLD_START_GRACE_MS = 15_000; // 15 s — covers typical Render cold start
+const _COLD_START_GRACE_MS = 50_000; // 50 s — covers Render cold start (can take 30-50 s)
 let _authConfirmed       = false;    // set true once /auth/me returns 200
 
 function _inColdStartGrace() {
@@ -111,7 +111,7 @@ async function requireAuth() {
   }
   // Retry up to 3 times with increasing delays to handle Render cold-start 401s.
   // A genuine session expiry will still redirect after all retries fail.
-  const delays = [0, 2000, 4000];
+  const delays = [0, 5000, 10000, 15000, 20000];
   for (let i = 0; i < delays.length; i++) {
     if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
     try {

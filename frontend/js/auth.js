@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       markLoggedIn();
       setUser(data.user);
+      // Small delay to ensure the httpOnly session cookie is fully committed
+      // before the next page loads and calls /auth/me
+      await new Promise(r => setTimeout(r, 300));
       window.location.href = '/index.html';
     } catch {
       showToast('Network error — is the server running?', 'error');
