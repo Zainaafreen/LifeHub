@@ -218,7 +218,7 @@ async function forgotPassword(req, res) {
     reqLog.info({ userId: user.id }, 'Password reset requested');
     res.json(genericOk);
   } catch (err) {
-    reqLog.error({ err }, 'forgotPassword error');
+    console.error('forgotPassword error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 }
