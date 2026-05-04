@@ -141,10 +141,11 @@ function generateCsrfToken() {
 }
 
 function csrfCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: false,   // must be readable by JS to echo back
-    sameSite: 'strict',
-    secure:   process.env.NODE_ENV === 'production',
+    sameSite: isProd ? 'none' : 'lax',
+    secure:   isProd,
     path:     '/',
   };
 }

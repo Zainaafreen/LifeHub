@@ -137,7 +137,7 @@ async function verifyEmail(req, res) {
 
 // ── POST /api/auth/resend-verification ───────────────────────
 async function resendVerification(req, res) {
-  const reqLog = logger.forRequest(req.id); // hoisted — must be accessible in catch
+  const reqLog = logger.forRequest(req.id);
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
@@ -175,18 +175,16 @@ async function resendVerification(req, res) {
 }
 
 // ── POST /api/auth/forgot-password ───────────────────────────
-// Always returns 200 to avoid leaking which emails are registered.
 async function forgotPassword(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
-    const { email } = req.body; // validated by Zod
+    const { email } = req.body;
 
     const result = await pool.query(
       'SELECT id, email FROM users WHERE email = $1',
       [email]
     );
 
-    // Respond identically whether or not the email exists
     const genericOk = { message: 'If that email is registered, a password reset link has been sent.' };
 
     if (result.rows.length === 0) {
@@ -195,14 +193,13 @@ async function forgotPassword(req, res) {
 
     const user = result.rows[0];
 
-    // Invalidate any existing unused reset tokens for this user
     await pool.query(
       'UPDATE password_reset_tokens SET used = TRUE WHERE user_id = $1 AND used = FALSE',
       [user.id]
     );
 
     const rawToken  = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await pool.query(
       'INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)',
@@ -230,7 +227,7 @@ async function forgotPassword(req, res) {
 async function resetPassword(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
-    const { token, password } = req.body; // validated by Zod
+    const { token, password } = req.body;
 
     const result = await pool.query(
       `SELECT prt.user_id
@@ -249,8 +246,8 @@ async function resetPassword(req, res) {
     const hashed = await bcrypt.hash(password, 10);
 
     await pool.query('BEGIN');
-    await pool.query('UPDATE users SET password = $1 WHERE id = $2',                    [hashed, user_id]);
-    await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = $1',   [token]);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = $1', [token]);
     await pool.query('COMMIT');
 
     reqLog.info({ userId: user_id }, 'Password reset successfully');
@@ -266,7 +263,7 @@ async function resetPassword(req, res) {
 async function login(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
-    const { email, password } = req.body; // validated by Zod
+    const { email, password } = req.body;
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
@@ -334,7 +331,6 @@ async function logout(req, res) {
 }
 
 // ── PATCH /api/auth/change-password ──────────────────────────
-// Requires auth (authenticate middleware applied in route).
 async function changePassword(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
@@ -363,12 +359,10 @@ async function changePassword(req, res) {
 }
 
 // ── DELETE /api/auth/account ──────────────────────────────────
-// Requires auth. DB has ON DELETE CASCADE for all user data.
 async function deleteAccount(req, res) {
   try {
     const reqLog = logger.forRequest(req.id);
 
-    // Revoke the active token before deleting
     if (req.token) await revokeToken(req.token).catch(() => {});
 
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
