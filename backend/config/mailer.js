@@ -2,23 +2,23 @@
  * mailer.js — email helper for LifeHub
  *
  * Send strategy (tried in order):
- *   1. Resend  — if RESEND_API_KEY is set  (HTTPS API, works on Render free tier)
+ *   1. Brevo   — if BREVO_API_KEY is set  (HTTPS API, works on Render free tier)
  *   2. SMTP    — if SMTP_HOST + SMTP_USER + SMTP_PASS are set  (blocked on Render free tier)
  *   3. Dev log — if NODE_ENV !== 'production'  (prints link to console)
  *   4. Throw   — production with no provider configured
  *
- * Recommended for Render free tier: use Resend (https://resend.com).
- * Sign up → create an API key → set RESEND_API_KEY + RESEND_FROM env vars.
+ * Recommended for Render free tier: use Brevo (https://brevo.com).
+ * Sign up → create an API key → set BREVO_API_KEY + BREVO_FROM env vars.
  */
 
 // ── Provider detection ────────────────────────────────────────
 
-const isResendConfigured = () => !!process.env.RESEND_API_KEY;
+const isBrevoConfigured = () => !!process.env.BREVO_API_KEY;
 
 const isSmtpConfigured = () =>
   !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
-const isEmailConfigured = () => isResendConfigured() || isSmtpConfigured();
+const isEmailConfigured = () => isBrevoConfigured() || isSmtpConfigured();
 
 // ── URL helpers ───────────────────────────────────────────────
 
@@ -30,27 +30,30 @@ function getBackendBase() {
   return (process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
 }
 
-// ── Resend sender (HTTPS — works on Render free tier) ─────────
+// ── Brevo sender (HTTPS — works on Render free tier) ──────────
 
-async function sendViaResend({ to, subject, text, html }) {
-  const res = await fetch('https://api.resend.com/emails', {
+async function sendViaBrevo({ to, subject, text, html }) {
+  const fromEmail = process.env.BREVO_FROM || 'onboarding@yourdomain.com';
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type':  'application/json',
+      'api-key':      process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      'Accept':       'application/json',
     },
     body: JSON.stringify({
-      from:    process.env.RESEND_FROM || 'LifeHub <onboarding@resend.dev>',
-      to:      [to],
+      sender:      { email: fromEmail },
+      to:          [{ email: to }],
       subject,
-      text,
-      html,
+      textContent: text,
+      htmlContent: html,
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Resend API error ${res.status}: ${body}`);
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
   }
 }
 
@@ -87,8 +90,8 @@ async function sendViaSmtp({ to, subject, text, html }) {
 // ── Unified send ──────────────────────────────────────────────
 
 async function sendEmail(opts) {
-  if (isResendConfigured()) {
-    return sendViaResend(opts);
+  if (isBrevoConfigured()) {
+    return sendViaBrevo(opts);
   }
   if (isSmtpConfigured()) {
     return sendViaSmtp(opts);
