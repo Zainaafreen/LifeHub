@@ -1,5 +1,3 @@
-/* auth.js — loaded on login.html */
-
 document.addEventListener('DOMContentLoaded', () => {
   redirectIfLoggedIn();
 
@@ -47,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resendSection) resendSection.style.display = 'none';
 
     try {
-      const res  = await fetch('/api/auth/login', {
+      const res  = await fetch('https://lifehub-backend-n0y5.onrender.com/api/auth/login', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -95,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Creating account…';
 
     try {
-      const res  = await fetch('/api/auth/register', {
+      const res  = await fetch('https://lifehub-backend-n0y5.onrender.com/api/auth/register', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -133,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Sending…';
 
     try {
-      await fetch('/api/auth/forgot-password', {
+      await fetch('https://lifehub-backend-n0y5.onrender.com/api/auth/forgot-password', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -154,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled    = true;
     btn.textContent = 'Sending…';
     try {
-      await fetch('/api/auth/resend-verification', {
+      await fetch('https://lifehub-backend-n0y5.onrender.com/api/auth/resend-verification', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: _lastEmail }),

@@ -1,20 +1,4 @@
-/* LifeHub — app.js  (shared across all pages) */
-
-const API = '/api';
-
-// ── Frontend error tracking ──────────────────────────────────
-// Warning fix: bare fetch() means JS exceptions are invisible in
-// production.  This lightweight tracker captures:
-//   1. Uncaught JS exceptions        (window.onerror)
-//   2. Unhandled promise rejections  (window.onunhandledrejection)
-//   3. HTTP 4xx/5xx from API calls   (apiFetch wrapper below)
-//
-// Errors are sent to POST /api/client-errors (backend logs via Pino)
-// and written to sessionStorage so you can inspect them in DevTools
-// (Application → Session Storage → lh_errors).
-//
-// Replace the sendError body with your preferred monitoring sink
-// (Sentry, LogRocket, etc.) if you ever add one.
+const API = 'https://lifehub-backend-n0y5.onrender.com/api';
 
 (function installErrorTracker() {
   const MAX_STORED = 50;
@@ -37,7 +21,7 @@ const API = '/api';
     storeEntry(entry);
     // Best-effort — don't await, don't throw
     try {
-      navigator.sendBeacon('/api/client-errors', JSON.stringify(entry));
+      navigator.sendBeacon(`${API}/client-errors`, JSON.stringify(entry));
     } catch { /* sendBeacon unavailable */ }
   }
 
@@ -81,20 +65,15 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-// ── Fix #1 (frontend): Token helpers ────────────────────────
-// JWT is now stored in an httpOnly cookie set by the server —
-// JavaScript can no longer read or write it (blocks XSS token theft).
-//
-// The "logged-in" flag is stored in localStorage (not sessionStorage)
-// so it survives tab closes.  On every page load requireAuth() calls
-// GET /api/auth/me to confirm the httpOnly cookie is still valid before
-// trusting the flag.  This means:
-//   • Opening a new tab works — the cookie is still there.
-//   • If the cookie has expired the server returns 401, requireAuth()
-//     clears the flag and redirects to /login.
-//
-// User profile (name / email) stays in localStorage because it
-// contains no secrets and is only displayed, never used for auth.
+// ── Toast keyframe (injected once) ──────────────────────────
+(function injectToastStyle() {
+  if (document.getElementById('lh-toast-style')) return;
+  const style = document.createElement('style');
+  style.id = 'lh-toast-style';
+  style.textContent = `@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }`;
+  document.head.appendChild(style);
+})();
+
 function getToken()   { return null;  } // cookie is httpOnly — not readable by JS
 function setToken(_)  { /* no-op: server sets the httpOnly cookie */ }
 function clearToken() {
@@ -113,17 +92,13 @@ function getUser() {
 }
 function setUser(u) { localStorage.setItem('lh_user', JSON.stringify(u)); }
 
-// ── Redirect helpers ────────────────────────────────────────
-// requireAuth pings /api/auth/me to verify the httpOnly cookie is still
-// valid.  This covers the "new tab" case: localStorage still has the flag
-// but the cookie may have expired server-side.
 async function requireAuth() {
   if (!isLoggedIn()) {
     window.location.href = '/pages/login.html';
     return;
   }
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
     if (!res.ok) {
       clearToken();
       window.location.href = '/pages/login.html';
@@ -137,15 +112,11 @@ function redirectIfLoggedIn() {
   if (isLoggedIn()) { window.location.href = '/index.html'; }
 }
 
-// ── CSRF token ──────────────────────────────────────────────
-// Fetched once on page load from GET /api/csrf-token and attached
-// as X-CSRF-Token on every mutating request (POST/PUT/PATCH/DELETE).
-// The server uses the double-submit cookie pattern via csurf.
 let _csrfToken = null;
 
 async function loadCsrfToken() {
   try {
-    const res  = await fetch('/api/csrf-token', { credentials: 'include' });
+    const res  = await fetch(`${API}/csrf-token`, { credentials: 'include' });
     const data = await res.json();
     _csrfToken = data.csrfToken || null;
   } catch (_) {
@@ -158,11 +129,6 @@ async function loadCsrfToken() {
 // Kick off the CSRF fetch immediately (non-blocking)
 loadCsrfToken();
 
-// ── Authenticated fetch ─────────────────────────────────────
-// credentials:'include' ensures the httpOnly cookie is sent automatically.
-// The Authorization header is kept for API clients / Postman that still
-// pass a Bearer token explicitly.
-// X-CSRF-Token is injected automatically for all mutating verbs.
 async function apiFetch(path, options = {}) {
   const method  = (options.method || 'GET').toUpperCase();
   const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -254,10 +220,6 @@ function showToast(message, type = 'success') {
     maxWidth: '340px', animation: 'toastIn 0.25s ease',
   });
 
-  const style = document.createElement('style');
-  style.textContent = `@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }`;
-  document.head.appendChild(style);
-
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
 }
@@ -276,10 +238,6 @@ function showAlertBanner(alerts) {
     marginBottom: '20px', color: 'var(--red)',
   });
 
-  // FIX: each alert string is escaped before injection to prevent XSS.
-  // Alert text originates from server-side templates that embed user-supplied
-  // numeric values (bpm, mmHg, mg/dL). escHtml() neutralises any characters
-  // that could be interpreted as markup if those values were ever tampered with.
   const heading = document.createElement('strong');
   heading.textContent = '⚠️ Health Alerts';
 
@@ -659,61 +617,6 @@ function _fireReminderNotification(reminder) {
   });
   toast.innerHTML = `<div style="font-weight:700;margin-bottom:4px">⏰ Reminder Due</div><div>${escHtml(reminder.title)}</div><div style="font-size:0.75rem;color:var(--text-muted,#888);margin-top:4px">Click to dismiss</div>`;
   toast.addEventListener('click', () => toast.remove());
-
-  const style = document.createElement('style');
-  style.textContent = `@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }`;
-  document.head.appendChild(style);
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 15000);
-
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try {
-      const n = new Notification(`⏰ ${reminder.title}`, {
-        body:               reminder.description || 'LifeHub reminder is due now.',
-        icon:               '/favicon.svg',
-        tag:                `lh-reminder-${reminder.id}`,
-        requireInteraction: true,
-      });
-      n.onclick = () => {
-        window.focus();
-        window.location.href = '/pages/reminders.html';
-        n.close();
-      };
-    } catch (_) {
-      showToast(`⏰ ${reminder.title} is due now`, 'warning');
-    }
-  } else if ('Notification' in window && Notification.permission === 'default') {
-    showToast(`🔔 ${reminder.title} — enable notifications to get background alerts`, 'warning');
-  } else {
-    showToast(`⏰ ${reminder.title} is due now`, 'warning');
-  }
-}
-
-function _fireReminderNotification(reminder) {
-  playReminderSound();
-  showReminderOverlay(reminder);
-
-  // Show a persistent toast that stays until clicked (not auto-dismissed)
-  const existing = document.getElementById('lh-toast');
-  if (existing) existing.remove();
-
-  const toast = document.createElement('div');
-  toast.id = 'lh-toast';
-  Object.assign(toast.style, {
-    position: 'fixed', bottom: '24px', right: '24px', zIndex: '9999',
-    background: 'var(--surface)', color: 'var(--text)',
-    padding: '14px 18px', borderRadius: 'var(--radius-sm)',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.18)', fontSize: '0.9rem', fontWeight: '500',
-    borderLeft: '4px solid var(--blue, #2563eb)',
-    maxWidth: '360px', cursor: 'pointer',
-    animation: 'toastIn 0.25s ease',
-  });
-  toast.innerHTML = `<div style="font-weight:700;margin-bottom:4px">⏰ Reminder Due</div><div>${escHtml(reminder.title)}</div><div style="font-size:0.75rem;color:var(--text-muted,#888);margin-top:4px">Click to dismiss</div>`;
-  toast.addEventListener('click', () => toast.remove());
-
-  const style = document.createElement('style');
-  style.textContent = `@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }`;
-  document.head.appendChild(style);
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 15000);
 
