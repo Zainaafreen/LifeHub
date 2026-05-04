@@ -97,15 +97,24 @@ async function requireAuth() {
     window.location.href = '/pages/login.html';
     return;
   }
-  try {
-    const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
-    if (!res.ok) {
+  // Retry up to 3 times with increasing delays to handle Render cold-start 401s.
+  // A genuine session expiry will still redirect after all retries fail.
+  const delays = [0, 2000, 4000];
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
+    try {
+      const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
+      if (res.ok) return; // session valid — continue
+      if (res.status === 401 && i < delays.length - 1) continue; // cold start — retry
+      // Final attempt failed or non-401 error
       clearToken();
       window.location.href = '/pages/login.html';
+      return;
+    } catch (_) {
+      // Network error — leave the user on the page; they'll get 401s on
+      // the next API call and be redirected then.
+      return;
     }
-  } catch (_) {
-    // Network error — leave the user on the page; they'll get 401s on
-    // the next API call and be redirected then.
   }
 }
 function redirectIfLoggedIn() {
