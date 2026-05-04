@@ -74,6 +74,18 @@ function escHtml(s) {
   document.head.appendChild(style);
 })();
 
+// ── Cold-start guard ────────────────────────────────────────
+// Render free tier spins down after inactivity. On first load the backend
+// can return 401 while it wakes up. We suppress apiFetch 401-redirects
+// during a short grace window so the pollers don't evict a legitimate user.
+const _PAGE_LOAD_TS      = Date.now();
+const _COLD_START_GRACE_MS = 15_000; // 15 s — covers typical Render cold start
+let _authConfirmed       = false;    // set true once /auth/me returns 200
+
+function _inColdStartGrace() {
+  return !_authConfirmed && (Date.now() - _PAGE_LOAD_TS < _COLD_START_GRACE_MS);
+}
+
 function getToken()   { return null;  } // cookie is httpOnly — not readable by JS
 function setToken(_)  { /* no-op: server sets the httpOnly cookie */ }
 function clearToken() {
@@ -104,7 +116,7 @@ async function requireAuth() {
     if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
     try {
       const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
-      if (res.ok) return; // session valid — continue
+      if (res.ok) { _authConfirmed = true; return; } // session valid — continue
       if (res.status === 401 && i < delays.length - 1) continue; // cold start — retry
       // Final attempt failed or non-401 error
       clearToken();
@@ -171,9 +183,12 @@ async function apiFetch(path, options = {}) {
   }
 
   if (res.status === 401) {
+    // During Render cold-start, the backend can return 401 before the session
+    // cookie is recognised. Don't redirect while requireAuth is still retrying.
+    if (_inColdStartGrace()) return null;
     clearToken();
     window.location.href = '/pages/login.html';
-    return;
+    return null;
   }
 
   // Log non-OK responses to the error tracker
@@ -823,7 +838,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Date.now() > dismissedUntil) {
       setTimeout(_promptNotificationPermission, 1500);
     }
-    startGlobalReminderPoller();
-    startGlobalReminderFallback();
+    // Start pollers only AFTER requireAuth confirms the session is live.
+    // This prevents the pollers from firing 401s during Render cold-start
+    // and triggering a spurious logout redirect via apiFetch.
+    // requireAuth is called by each page's own script (e.g. dashboard.js);
+    // we hook into it here by waiting for _authConfirmed to be set or the
+    // grace window to expire before starting background polling.
+    const _startPollersWhenReady = () => {
+      if (_authConfirmed) {
+        startGlobalReminderPoller();
+        startGlobalReminderFallback();
+      } else if (_inColdStartGrace()) {
+        setTimeout(_startPollersWhenReady, 1000);
+      }
+      // If grace expired and still not confirmed, don't start pollers —
+      // requireAuth will have already redirected the user to login.
+    };
+    setTimeout(_startPollersWhenReady, 1000);
   }
 });
