@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
-const fs = require('fs');
+const fs   = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -33,14 +34,21 @@ const connectionConfig = process.env.DATABASE_URL
 let sslConfig;
 if (isProduction) {
   if (process.env.DB_SSL_CA) {
-    sslConfig = {
-      rejectUnauthorized: true,
-      ca: fs.readFileSync(process.env.DB_SSL_CA).toString(),
-    };
+    // Resolve relative to the project root so it works regardless of cwd
+    const caPath = path.isAbsolute(process.env.DB_SSL_CA)
+      ? process.env.DB_SSL_CA
+      : path.resolve(__dirname, '..', process.env.DB_SSL_CA);
+    try {
+      sslConfig = {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync(caPath).toString(),
+      };
+    } catch (e) {
+      console.warn(`⚠️  Could not read DB_SSL_CA at ${caPath}: ${e.message}. Falling back to system trust store.`);
+      sslConfig = { rejectUnauthorized: true };
+    }
   } else {
     // No custom CA supplied — rely on Node's built-in root store.
-    // Works for Neon, Supabase, Railway, and any host whose CA is in
-    // the Mozilla trust bundle.  Will still reject self-signed certs.
     sslConfig = { rejectUnauthorized: true };
     console.warn(
       '⚠️  DB_SSL_CA is not set.  SSL connections will be accepted only if ' +

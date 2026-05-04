@@ -51,23 +51,23 @@ async function register(req, res) {
       [rawToken, user.id, expiresAt]
     );
 
+    let emailSent = true;
     try {
       await sendVerificationEmail(user.email, rawToken);
     } catch (emailErr) {
-      if (emailErr.message === 'Email service not configured') {
-        return res.status(503).json({ error: 'Email service not configured. Contact your administrator.' });
-      }
-      throw emailErr;
+      emailSent = false;
+      reqLog.warn({ err: emailErr }, 'Verification email failed to send — account created but email not sent');
     }
 
     reqLog.info({ userId: user.id }, 'User registered');
 
-    const isDevMode = !process.env.SMTP_HOST;
     const response = {
-      message: 'Account created. Please check your email to verify your address before logging in.',
-      user:    { id: user.id, name: user.name, email: user.email },
+      message: emailSent
+        ? 'Account created. Please check your email to verify your address before logging in.'
+        : 'Account created, but we could not send a verification email right now. Use the "Resend verification" option on the login page.',
+      user: { id: user.id, name: user.name, email: user.email },
     };
-    if (isDevMode) {
+    if (!process.env.SMTP_HOST) {
       response.devVerifyToken = rawToken;
       response.devNote = 'SMTP not configured — use this token to verify: GET /api/auth/verify-email?token=<devVerifyToken>';
     }

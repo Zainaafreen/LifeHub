@@ -10,6 +10,12 @@ const isSmtpConfigured = () =>
   !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
 function getBase() {
+  // Verification links must go to the frontend, not the backend API server.
+  // Use FRONTEND_URL if set, otherwise fall back to APP_BASE_URL for legacy compat.
+  return (process.env.FRONTEND_URL || process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+}
+
+function getBackendBase() {
   return (process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
 }
 
@@ -19,15 +25,19 @@ function getTransporter() {
     return null;
   }
   return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: process.env.SMTP_PORT === '465',
-    auth:   { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host:             process.env.SMTP_HOST,
+    port:             parseInt(process.env.SMTP_PORT || '587', 10),
+    secure:           process.env.SMTP_PORT === '465',
+    auth:             { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    connectionTimeout: 10000,  // 10 s — prevents hanging on cold Render starts
+    greetingTimeout:   5000,
+    socketTimeout:    10000,
   });
 }
 
 async function sendVerificationEmail(toEmail, token) {
-  const link = `${getBase()}/api/auth/verify-email?token=${token}`;
+  // Verification clicks hit the backend API endpoint which then sets verified=true
+  const link = `${getBackendBase()}/api/auth/verify-email?token=${token}`;
 
   if (!isSmtpConfigured()) {
     if (process.env.NODE_ENV === 'production') {
