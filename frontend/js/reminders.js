@@ -73,21 +73,21 @@ function renderNotifBanner() {
   }
 }
 
-async function requestNotificationPermission() {
-  if (!('Notification' in window)) {
-    showToast('This browser does not support notifications', 'warning');
-    return;
-  }
-  const result = await Notification.requestPermission();
-  // permission stored by browser natively;
-  renderNotifBanner();
-  if (result === 'granted') {
-    showToast('Notifications enabled! You\'ll be alerted when reminders are due.', 'success');
-    _pollDueRemindersGlobal(); // trigger an immediate check via the global poller
-  } else {
-    showToast('Notifications blocked. Enable in browser settings.', 'warning');
-  }
-}
+//async function requestNotificationPermission() {
+//  if (!('Notification' in window)) {
+//    showToast('This browser does not support notifications', 'warning');
+//    return;
+//  }
+//  const result = await Notification.requestPermission();
+//  // permission stored by browser natively;
+//  renderNotifBanner();
+//  if (result === 'granted') {
+//    showToast('Notifications enabled! You\'ll be alerted when reminders are due.', 'success');
+//    _pollDueRemindersGlobal(); // trigger an immediate check via the global poller
+//  } else {
+//    showToast('Notifications blocked. Enable in browser settings.', 'warning');
+//  }
+//}
 
 // ── Data loading ────────────────────────────────────────────
 // When the global poller (app.js) fires a notification it broadcasts
