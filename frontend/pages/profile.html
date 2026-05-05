@@ -195,13 +195,12 @@
     <a href="/pages/health.html"       class="nav-link"><span class="nav-icon">❤️</span> Health</a>
     <a href="/pages/reminders.html"    class="nav-link"><span class="nav-icon">🔔</span> Reminders</a>
     <div class="sidebar-footer">
-      <a href="/pages/profile.html" class="sidebar-user sidebar-user-link active" style="text-decoration:none;cursor:pointer;" title="Edit profile">
-        <div class="sidebar-avatar" id="sidebar-avatar">U</div>
+      <div class="sidebar-user sidebar-user-link active" style="cursor:default;">
         <div style="min-width:0;">
           <div class="sidebar-user-name" id="sidebar-user-name">Loading…</div>
           <div class="sidebar-user-email" id="sidebar-user-email">&nbsp;</div>
         </div>
-      </a>
+      </div>
       <button class="btn btn-outline w-full" id="logout-btn">Sign out</button>
     </div>
   </nav>
@@ -340,176 +339,6 @@
 </div>
 
 <script src="/js/app.js"></script>
-<script>
-(async () => {
-  // requireAuth redirects to login if session is invalid; we stop here if it does.
-  await requireAuth();
-  if (!isLoggedIn()) return;
-
-  // ── Load profile ─────────────────────────────────────────
-  async function loadProfile() {
-    const res = await apiFetch('/profile');
-    if (!res || !res.ok) return;
-    const u = await res.json();
-
-    // Keep localStorage user fresh so initSidebar() works on every page
-    setUser({ id: u.id, name: u.name, email: u.email });
-
-    // Update sidebar directly too (initSidebar already ran from app.js,
-    // but the API may return a fresher name/email than localStorage had)
-    const nameEl   = document.getElementById('sidebar-user-name');
-    const emailEl  = document.getElementById('sidebar-user-email');
-    const avatarEl = document.getElementById('sidebar-avatar');
-    if (nameEl)   nameEl.textContent  = u.name;
-    if (emailEl)  emailEl.textContent = u.email;
-    if (avatarEl) avatarEl.textContent = u.name.charAt(0).toUpperCase();
-
-    // Identity card
-    document.getElementById('profile-avatar-lg').textContent = u.name.charAt(0).toUpperCase();
-    document.getElementById('profile-name-display').textContent  = u.name;
-    document.getElementById('profile-email-display').textContent = u.email;
-    document.getElementById('profile-since').textContent =
-      new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    // Chips
-    const chips = document.getElementById('profile-chips');
-    chips.innerHTML = '';
-    if (u.age)         chips.innerHTML += chip('🎂', u.age + ' yrs');
-    if (u.gender)      chips.innerHTML += chip('👤', fmtGender(u.gender));
-    if (u.blood_group) chips.innerHTML += chip('🩸', u.blood_group);
-
-    // Form fields
-    document.getElementById('inp-name').value      = u.name       || '';
-    document.getElementById('inp-email').value     = u.email      || '';
-    document.getElementById('inp-age').value       = u.age        || '';
-    document.getElementById('inp-gender').value    = u.gender     || '';
-    document.getElementById('inp-blood').value     = u.blood_group       || '';
-    document.getElementById('inp-emergency').value = u.emergency_contact || '';
-    document.getElementById('inp-conditions').value = u.health_conditions || '';
-  }
-
-  function chip(icon, text) {
-    return `<span class="profile-meta-chip">${icon} <span>${escHtml(text)}</span></span>`;
-  }
-  function fmtGender(g) {
-    return { male:'Male', female:'Female', other:'Other', prefer_not_to_say:'Prefer not to say' }[g] || g;
-  }
-
-  await loadProfile();
-
-  // ── Save helpers ─────────────────────────────────────────
-  function showStatus(id, msg, isError = false) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.className = 'save-status visible' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'save-status'; }, 3000);
-  }
-
-  async function saveSection(payload, statusId, btnId, btnLabel = 'Save changes') {
-    const btn = document.getElementById(btnId);
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-    try {
-      const res = await apiFetch('/profile', {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-      if (!res) {
-        showStatus(statusId, 'No response — are you logged in?', true);
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) {
-        showStatus(statusId, data.error || 'Failed to save', true);
-        showToast(data.error || 'Failed to save', 'error');
-      } else {
-        // Sync localStorage so sidebar stays fresh on other pages
-        if (data.user) {
-          const stored = getUser();
-          setUser({ ...(stored || {}), name: data.user.name, email: data.user.email });
-        }
-        showStatus(statusId, '✓ Saved');
-        showToast('Changes saved', 'success');
-        await loadProfile();
-      }
-    } catch (_) {
-      showStatus(statusId, 'Network error', true);
-      showToast('Network error — could not save', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = btnLabel;
-    }
-  }
-
-  // ── Personal info ────────────────────────────────────────
-  document.getElementById('save-personal').addEventListener('click', async () => {
-    const name  = document.getElementById('inp-name').value.trim();
-    const email = document.getElementById('inp-email').value.trim();
-    const age   = document.getElementById('inp-age').value;
-    const gender = document.getElementById('inp-gender').value;
-
-    if (!name)  return showStatus('status-personal', 'Name is required', true);
-    if (!email) return showStatus('status-personal', 'Email is required', true);
-
-    await saveSection(
-      { name, email, age: age ? parseInt(age) : null, gender: gender || null },
-      'status-personal', 'save-personal', 'Save changes'
-    );
-  });
-
-  // ── Health info ──────────────────────────────────────────
-  document.getElementById('save-health').addEventListener('click', async () => {
-    const blood      = document.getElementById('inp-blood').value;
-    const emergency  = document.getElementById('inp-emergency').value.trim();
-    const conditions = document.getElementById('inp-conditions').value.trim();
-
-    await saveSection(
-      {
-        blood_group:        blood       || null,
-        emergency_contact:  emergency   || null,
-        health_conditions:  conditions  || null,
-      },
-      'status-health', 'save-health', 'Save changes'
-    );
-  });
-
-  // ── Change password ──────────────────────────────────────
-  document.getElementById('save-password').addEventListener('click', async () => {
-    const btn     = document.getElementById('save-password');
-    const current = document.getElementById('inp-cur-pw').value;
-    const newPw   = document.getElementById('inp-new-pw').value;
-    const confirm = document.getElementById('inp-confirm-pw').value;
-
-    if (!current) return showStatus('status-password', 'Enter your current password', true);
-    if (!newPw)   return showStatus('status-password', 'Enter a new password', true);
-    if (newPw.length < 8) return showStatus('status-password', 'Password must be at least 8 characters', true);
-    if (newPw !== confirm) return showStatus('status-password', 'Passwords do not match', true);
-
-    btn.disabled = true;
-    btn.textContent = 'Updating…';
-    try {
-      const res = await apiFetch('/auth/change-password', {
-        method: 'PATCH',
-        body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
-      });
-      if (!res) return;
-      const data = await res.json();
-      if (!res.ok) {
-        showStatus('status-password', data.error || 'Failed', true);
-      } else {
-        document.getElementById('inp-cur-pw').value    = '';
-        document.getElementById('inp-new-pw').value    = '';
-        document.getElementById('inp-confirm-pw').value = '';
-        showStatus('status-password', '✓ Password updated');
-      }
-    } catch (_) {
-      showStatus('status-password', 'Network error', true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Update password';
-    }
-  });
-})();
-</script>
+<script src="/js/profile.js"></script>
 </body>
 </html>
