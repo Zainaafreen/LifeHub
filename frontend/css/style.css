@@ -1199,3 +1199,29 @@ tbody tr:hover { background: var(--bg); }
 
 /* Red-light */
 .red-light { background: var(--red-light); }
+
+/* ── Sidebar user link (profile shortcut) ── */
+.sidebar-user-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  border: 1.5px solid transparent;
+}
+.sidebar-user-link:hover {
+  background: var(--purple-light);
+  border-color: var(--lavender-border);
+}
+.sidebar-user-link:hover .sidebar-user-name  { color: var(--purple); }
+.sidebar-user-link:hover .sidebar-user-email { color: var(--purple-mid); }
+.sidebar-user-link.active {
+  background: var(--purple-light);
+  border-color: var(--lavender-border);
+}
+.sidebar-user-link.active .sidebar-user-name { color: var(--purple); }

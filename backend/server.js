@@ -8,6 +8,7 @@ const path         = require('path');
 require('dotenv').config();
 const logger = require('./config/logger');
 const pool   = require('./config/db');
+const profileRouter = require('./routes/profile');
 
 // ── Required env vars ─────────────────────────────────────────
 const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
@@ -299,6 +300,7 @@ app.post('/api/client-errors', clientErrorLimiter, (req, res) => {
 
 // ── API Routes ────────────────────────────────────────────────
 app.use('/api/auth',      authLimiter, require('./routes/auth'));  // authLimiter only — apiLimiter skips /api/auth
+app.use('/api/profile',   apiLimiter, profileRouter);
 app.use('/api/tasks',     apiLimiter, require('./routes/tasks'));
 app.use('/api/expenses',  apiLimiter, require('./routes/expenses'));
 app.use('/api/health',    apiLimiter, require('./routes/health'));

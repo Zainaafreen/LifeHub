@@ -21,7 +21,7 @@
       background: var(--surface);
       border-radius: 16px;
       padding: 48px 40px;
-      max-width: 420px;
+      max-width: 440px;
       width: 100%;
       text-align: center;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
@@ -41,48 +41,164 @@
       color: var(--text-muted);
       font-size: 0.95rem;
       line-height: 1.6;
-      margin-bottom: 28px;
+      margin-bottom: 16px;
     }
     .verify-status-card .btn {
-      display: inline-block;
+      display: inline-flex;
       width: 100%;
+      margin-top: 8px;
     }
-    .verify-already p {
-      margin-bottom: 12px;
-    }
-    .verify-already .btn-secondary {
+    .verify-status-card .btn + .btn {
       margin-top: 10px;
+    }
+
+    /* Resend inline form */
+    .resend-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .resend-row input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+    }
+    .resend-row input:focus {
+      outline: none;
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(92,80,232,0.12);
+    }
+    .resend-row button {
+      white-space: nowrap;
+    }
+    .resend-msg {
+      font-size: 0.82rem;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+    .resend-msg.ok  { color: var(--green); }
+    .resend-msg.err { color: var(--red); }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0 16px;
     }
   </style>
 </head>
 <body class="auth-page">
 <div class="verify-status-wrap">
+
+  <!-- ── Expired / already-used card ── -->
   <div class="verify-status-card" id="card-expired" style="display:none;">
     <span class="verify-status-icon">⏰</span>
     <h1>Link Expired</h1>
-    <p>This verification link has already been used or has expired. Links are valid for 24 hours.</p>
-    <p>If you haven't verified your email yet, request a new link below.</p>
-    <a href="/pages/login.html" class="btn btn-primary">Back to Login</a>
+    <p>This verification link has already been used or has expired.<br>Links are valid for 24 hours.</p>
+
+    <!-- Shown when user IS logged in -->
+    <div id="expired-logged-in" style="display:none;">
+      <p style="margin-bottom:4px;">You're already signed in.</p>
+      <a href="/index.html" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+
+    <!-- Shown when user is NOT logged in -->
+    <div id="expired-logged-out" style="display:none;">
+      <a href="/pages/login.html" class="btn btn-primary">Back to Login</a>
+
+      <hr class="divider" />
+      <p style="margin-bottom:6px; font-size:0.85rem;">Haven't verified yet? Request a new link:</p>
+      <div class="resend-row">
+        <input type="email" id="resend-email" placeholder="your@email.com" autocomplete="email" />
+        <button class="btn btn-outline btn-sm" id="resend-btn">Send</button>
+      </div>
+      <p class="resend-msg" id="resend-msg"></p>
+    </div>
   </div>
 
-  <div class="verify-status-card verify-already" id="card-already" style="display:none;">
+  <!-- ── Already verified card ── -->
+  <div class="verify-status-card" id="card-already" style="display:none;">
     <span class="verify-status-icon">✅</span>
     <h1>Already Verified</h1>
     <p>Your email has already been verified.</p>
-    <a href="/pages/login.html" class="btn btn-primary">Log In</a>
+
+    <!-- Shown when user IS logged in -->
+    <div id="already-logged-in" style="display:none;">
+      <a href="/index.html" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+
+    <!-- Shown when user is NOT logged in -->
+    <div id="already-logged-out" style="display:none;">
+      <a href="/pages/login.html" class="btn btn-primary">Log In</a>
+    </div>
   </div>
+
 </div>
 
+<script src="../js/app.js"></script>
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get('status');
+document.addEventListener('DOMContentLoaded', () => {
+  const params   = new URLSearchParams(window.location.search);
+  const status   = params.get('status');
+  const loggedIn = isLoggedIn(); // from app.js
 
   if (status === 'already') {
     document.getElementById('card-already').style.display = 'block';
+    if (loggedIn) {
+      document.getElementById('already-logged-in').style.display  = 'block';
+    } else {
+      document.getElementById('already-logged-out').style.display = 'block';
+    }
   } else {
-    // default: expired / invalid
+    // expired / invalid / missing → always show expired card
     document.getElementById('card-expired').style.display = 'block';
+    if (loggedIn) {
+      document.getElementById('expired-logged-in').style.display  = 'block';
+    } else {
+      document.getElementById('expired-logged-out').style.display = 'block';
+    }
   }
+
+  // ── Resend logic ────────────────────────────────────────
+  document.getElementById('resend-btn')?.addEventListener('click', async () => {
+    const emailEl = document.getElementById('resend-email');
+    const msgEl   = document.getElementById('resend-msg');
+    const btn     = document.getElementById('resend-btn');
+    const email   = emailEl.value.trim();
+
+    if (!email) {
+      msgEl.textContent = 'Please enter your email address.';
+      msgEl.className   = 'resend-msg err';
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+    msgEl.textContent = '';
+    msgEl.className   = 'resend-msg';
+
+    try {
+      await fetch('https://lifehub-backend-n0y5.onrender.com/api/auth/resend-verification', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email }),
+      });
+      // Always show success (API is ambiguous to prevent enumeration)
+      msgEl.textContent = '✓ If that address is registered and unverified, a new link has been sent.';
+      msgEl.className   = 'resend-msg ok';
+    } catch (_) {
+      msgEl.textContent = 'Network error — please try again.';
+      msgEl.className   = 'resend-msg err';
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Send';
+    }
+  });
+});
 </script>
 </body>
 </html>

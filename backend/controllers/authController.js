@@ -98,7 +98,8 @@ async function verifyEmail(req, res) {
     const { token } = req.query;
 
     if (!token || !/^[0-9a-f]{64}$/.test(token)) {
-      return res.status(400).json({ error: 'Invalid verification token' });
+      const frontendBase = (process.env.FRONTEND_URL || process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+      return res.redirect(`${frontendBase}/pages/verify-status.html?status=expired`);
     }
 
     const result = await pool.query(
