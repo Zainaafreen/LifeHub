@@ -342,7 +342,9 @@
 <script src="/js/app.js"></script>
 <script>
 (async () => {
+  // requireAuth redirects to login if session is invalid; we stop here if it does.
   await requireAuth();
+  if (!isLoggedIn()) return;
 
   // ── Load profile ─────────────────────────────────────────
   async function loadProfile() {
@@ -350,12 +352,16 @@
     if (!res || !res.ok) return;
     const u = await res.json();
 
-    // Sidebar
+    // Keep localStorage user fresh so initSidebar() works on every page
+    setUser({ id: u.id, name: u.name, email: u.email });
+
+    // Update sidebar directly too (initSidebar already ran from app.js,
+    // but the API may return a fresher name/email than localStorage had)
     const nameEl   = document.getElementById('sidebar-user-name');
     const emailEl  = document.getElementById('sidebar-user-email');
     const avatarEl = document.getElementById('sidebar-avatar');
-    if (nameEl)  nameEl.textContent  = u.name;
-    if (emailEl) emailEl.textContent = u.email;
+    if (nameEl)   nameEl.textContent  = u.name;
+    if (emailEl)  emailEl.textContent = u.email;
     if (avatarEl) avatarEl.textContent = u.name.charAt(0).toUpperCase();
 
     // Identity card
@@ -399,7 +405,7 @@
     setTimeout(() => { el.className = 'save-status'; }, 3000);
   }
 
-  async function saveSection(payload, statusId, btnId) {
+  async function saveSection(payload, statusId, btnId, btnLabel = 'Save changes') {
     const btn = document.getElementById(btnId);
     btn.disabled = true;
     btn.textContent = 'Saving…';
@@ -408,24 +414,30 @@
         method: 'PATCH',
         body: JSON.stringify(payload),
       });
-      if (!res) return;
+      if (!res) {
+        showStatus(statusId, 'No response — are you logged in?', true);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) {
         showStatus(statusId, data.error || 'Failed to save', true);
+        showToast(data.error || 'Failed to save', 'error');
       } else {
-        // Update localStorage user so sidebar stays fresh
-        const stored = getUser();
-        if (stored && data.user) {
-          setUser({ ...stored, name: data.user.name, email: data.user.email });
+        // Sync localStorage so sidebar stays fresh on other pages
+        if (data.user) {
+          const stored = getUser();
+          setUser({ ...(stored || {}), name: data.user.name, email: data.user.email });
         }
         showStatus(statusId, '✓ Saved');
+        showToast('Changes saved', 'success');
         await loadProfile();
       }
     } catch (_) {
       showStatus(statusId, 'Network error', true);
+      showToast('Network error — could not save', 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Save changes';
+      btn.textContent = btnLabel;
     }
   }
 
@@ -441,7 +453,7 @@
 
     await saveSection(
       { name, email, age: age ? parseInt(age) : null, gender: gender || null },
-      'status-personal', 'save-personal'
+      'status-personal', 'save-personal', 'Save changes'
     );
   });
 
@@ -457,7 +469,7 @@
         emergency_contact:  emergency   || null,
         health_conditions:  conditions  || null,
       },
-      'status-health', 'save-health'
+      'status-health', 'save-health', 'Save changes'
     );
   });
 
