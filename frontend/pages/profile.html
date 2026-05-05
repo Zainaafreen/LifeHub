@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeHub – Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .profile-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Profile identity card ── */
+    .profile-identity {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      position: sticky;
+      top: 24px;
+    }
+    .profile-avatar-lg {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--purple-gradient);
+      color: white;
+      font-size: 2rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      letter-spacing: 0;
+    }
+    .profile-identity-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .profile-identity-email {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+    .profile-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 3px;
+    }
+    .profile-meta-chip span { font-weight: 600; color: var(--text); }
+    .profile-chips { margin-bottom: 20px; }
+
+    /* ── Cards ── */
+    .profile-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .profile-card-header {
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .profile-card-header h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+    .profile-card-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-xs);
+      background: var(--purple-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .profile-card-body {
+      padding: 20px 24px;
+    }
+
+    /* ── Form ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      box-sizing: border-box;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(92,80,232,0.1);
+      background: var(--surface);
+    }
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .form-select { appearance: none; cursor: pointer; }
+    .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    /* ── Password section ── */
+    .pw-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) {
+      .pw-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Save button row ── */
+    .card-actions {
+      padding: 14px 24px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .save-status {
+      font-size: 0.82rem;
+      color: var(--green);
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .save-status.visible { opacity: 1; }
+    .save-status.error { color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">☰</button>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">LifeHub</div>
+      <div class="logo-sub">Personal Dashboard</div>
+    </div>
+    <span class="nav-section-label">Overview</span>
+    <a href="/index.html"              class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+    <span class="nav-section-label">Manage</span>
+    <a href="/pages/tasks.html"        class="nav-link"><span class="nav-icon">✅</span> Tasks</a>
+    <a href="/pages/expenses.html"     class="nav-link"><span class="nav-icon">💰</span> Expenses</a>
+    <a href="/pages/health.html"       class="nav-link"><span class="nav-icon">❤️</span> Health</a>
+    <a href="/pages/reminders.html"    class="nav-link"><span class="nav-icon">🔔</span> Reminders</a>
+    <div class="sidebar-footer">
+      <a href="/pages/profile.html" class="sidebar-user sidebar-user-link active" style="text-decoration:none;cursor:pointer;" title="Edit profile">
+        <div class="sidebar-avatar" id="sidebar-avatar">U</div>
+        <div style="min-width:0;">
+          <div class="sidebar-user-name" id="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-email" id="sidebar-user-email">&nbsp;</div>
+        </div>
+      </a>
+      <button class="btn btn-outline w-full" id="logout-btn">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">My Profile</h1>
+        <p class="page-subtitle">Manage your personal details and health information</p>
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <!-- Identity card -->
+      <div class="profile-identity">
+        <div class="profile-avatar-lg" id="profile-avatar-lg">U</div>
+        <div class="profile-identity-name" id="profile-name-display">—</div>
+        <div class="profile-identity-email" id="profile-email-display">—</div>
+        <div class="profile-chips" id="profile-chips"></div>
+        <p style="font-size:0.75rem;color:var(--text-light);">Member since <span id="profile-since">—</span></p>
+      </div>
+
+      <!-- Right column -->
+      <div>
+
+        <!-- Personal Info -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <div class="profile-card-icon">👤</div>
+            <h2>Personal Information</h2>
+          </div>
+          <div class="profile-card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="inp-name">Full Name</label>
+                <input class="form-input" id="inp-name" type="text" placeholder="Your name" maxlength="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inp-email">Email Address</label>
+                <input class="form-input" id="inp-email" type="email" placeholder="you@example.com" maxlength="150" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="inp-age">Age</label>
+                <input class="form-input" id="inp-age" type="number" placeholder="e.g. 28" min="1" max="120" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inp-gender">Gender</label>
+                <select class="form-select" id="inp-gender">
+                  <option value="">Select…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" id="save-personal">Save changes</button>
+            <span class="save-status" id="status-personal"></span>
+          </div>
+        </div>
+
+        <!-- Health Info -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <div class="profile-card-icon">❤️</div>
+            <h2>Health Information</h2>
+          </div>
+          <div class="profile-card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="inp-blood">Blood Group</label>
+                <select class="form-select" id="inp-blood">
+                  <option value="">Select…</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A−</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B−</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB−</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O−</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inp-emergency">Emergency Contact</label>
+                <input class="form-input" id="inp-emergency" type="text" placeholder="Name & phone number" maxlength="150" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inp-conditions">Health Conditions</label>
+              <textarea class="form-textarea" id="inp-conditions" placeholder="e.g. Type 2 diabetes, hypertension, asthma…" maxlength="1000"></textarea>
+              <p class="form-hint">Used to personalise health alerts. Not shared with anyone.</p>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" id="save-health">Save changes</button>
+            <span class="save-status" id="status-health"></span>
+          </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <div class="profile-card-icon">🔒</div>
+            <h2>Change Password</h2>
+          </div>
+          <div class="profile-card-body">
+            <div class="pw-grid">
+              <div class="form-group">
+                <label class="form-label" for="inp-cur-pw">Current Password</label>
+                <input class="form-input" id="inp-cur-pw" type="password" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inp-new-pw">New Password</label>
+                <input class="form-input" id="inp-new-pw" type="password" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inp-confirm-pw">Confirm New Password</label>
+                <input class="form-input" id="inp-confirm-pw" type="password" placeholder="••••••••" />
+              </div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" id="save-password">Update password</button>
+            <span class="save-status" id="status-password"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  await requireAuth();
+
+  // ── Load profile ─────────────────────────────────────────
+  async function loadProfile() {
+    const res = await apiFetch('/profile');
+    if (!res || !res.ok) return;
+    const u = await res.json();
+
+    // Sidebar
+    const nameEl   = document.getElementById('sidebar-user-name');
+    const emailEl  = document.getElementById('sidebar-user-email');
+    const avatarEl = document.getElementById('sidebar-avatar');
+    if (nameEl)  nameEl.textContent  = u.name;
+    if (emailEl) emailEl.textContent = u.email;
+    if (avatarEl) avatarEl.textContent = u.name.charAt(0).toUpperCase();
+
+    // Identity card
+    document.getElementById('profile-avatar-lg').textContent = u.name.charAt(0).toUpperCase();
+    document.getElementById('profile-name-display').textContent  = u.name;
+    document.getElementById('profile-email-display').textContent = u.email;
+    document.getElementById('profile-since').textContent =
+      new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Chips
+    const chips = document.getElementById('profile-chips');
+    chips.innerHTML = '';
+    if (u.age)         chips.innerHTML += chip('🎂', u.age + ' yrs');
+    if (u.gender)      chips.innerHTML += chip('👤', fmtGender(u.gender));
+    if (u.blood_group) chips.innerHTML += chip('🩸', u.blood_group);
+
+    // Form fields
+    document.getElementById('inp-name').value      = u.name       || '';
+    document.getElementById('inp-email').value     = u.email      || '';
+    document.getElementById('inp-age').value       = u.age        || '';
+    document.getElementById('inp-gender').value    = u.gender     || '';
+    document.getElementById('inp-blood').value     = u.blood_group       || '';
+    document.getElementById('inp-emergency').value = u.emergency_contact || '';
+    document.getElementById('inp-conditions').value = u.health_conditions || '';
+  }
+
+  function chip(icon, text) {
+    return `<span class="profile-meta-chip">${icon} <span>${escHtml(text)}</span></span>`;
+  }
+  function fmtGender(g) {
+    return { male:'Male', female:'Female', other:'Other', prefer_not_to_say:'Prefer not to say' }[g] || g;
+  }
+
+  await loadProfile();
+
+  // ── Save helpers ─────────────────────────────────────────
+  function showStatus(id, msg, isError = false) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'save-status visible' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'save-status'; }, 3000);
+  }
+
+  async function saveSection(payload, statusId, btnId) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res = await apiFetch('/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      if (!res) return;
+      const data = await res.json();
+      if (!res.ok) {
+        showStatus(statusId, data.error || 'Failed to save', true);
+      } else {
+        // Update localStorage user so sidebar stays fresh
+        const stored = getUser();
+        if (stored && data.user) {
+          setUser({ ...stored, name: data.user.name, email: data.user.email });
+        }
+        showStatus(statusId, '✓ Saved');
+        await loadProfile();
+      }
+    } catch (_) {
+      showStatus(statusId, 'Network error', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  }
+
+  // ── Personal info ────────────────────────────────────────
+  document.getElementById('save-personal').addEventListener('click', async () => {
+    const name  = document.getElementById('inp-name').value.trim();
+    const email = document.getElementById('inp-email').value.trim();
+    const age   = document.getElementById('inp-age').value;
+    const gender = document.getElementById('inp-gender').value;
+
+    if (!name)  return showStatus('status-personal', 'Name is required', true);
+    if (!email) return showStatus('status-personal', 'Email is required', true);
+
+    await saveSection(
+      { name, email, age: age ? parseInt(age) : null, gender: gender || null },
+      'status-personal', 'save-personal'
+    );
+  });
+
+  // ── Health info ──────────────────────────────────────────
+  document.getElementById('save-health').addEventListener('click', async () => {
+    const blood      = document.getElementById('inp-blood').value;
+    const emergency  = document.getElementById('inp-emergency').value.trim();
+    const conditions = document.getElementById('inp-conditions').value.trim();
+
+    await saveSection(
+      {
+        blood_group:        blood       || null,
+        emergency_contact:  emergency   || null,
+        health_conditions:  conditions  || null,
+      },
+      'status-health', 'save-health'
+    );
+  });
+
+  // ── Change password ──────────────────────────────────────
+  document.getElementById('save-password').addEventListener('click', async () => {
+    const btn     = document.getElementById('save-password');
+    const current = document.getElementById('inp-cur-pw').value;
+    const newPw   = document.getElementById('inp-new-pw').value;
+    const confirm = document.getElementById('inp-confirm-pw').value;
+
+    if (!current) return showStatus('status-password', 'Enter your current password', true);
+    if (!newPw)   return showStatus('status-password', 'Enter a new password', true);
+    if (newPw.length < 8) return showStatus('status-password', 'Password must be at least 8 characters', true);
+    if (newPw !== confirm) return showStatus('status-password', 'Passwords do not match', true);
+
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+    try {
+      const res = await apiFetch('/auth/change-password', {
+        method: 'PATCH',
+        body: JSON.stringify({ currentPassword: current, newPassword: newPw }),
+      });
+      if (!res) return;
+      const data = await res.json();
+      if (!res.ok) {
+        showStatus('status-password', data.error || 'Failed', true);
+      } else {
+        document.getElementById('inp-cur-pw').value    = '';
+        document.getElementById('inp-new-pw').value    = '';
+        document.getElementById('inp-confirm-pw').value = '';
+        showStatus('status-password', '✓ Password updated');
+      }
+    } catch (_) {
+      showStatus('status-password', 'Network error', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update password';
+    }
+  });
+})();
+</script>
+</body>
+</html>

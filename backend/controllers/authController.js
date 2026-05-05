@@ -112,13 +112,15 @@ async function verifyEmail(req, res) {
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Verification link is invalid or has expired' });
+      const frontendBase = (process.env.FRONTEND_URL || process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+      return res.redirect(`${frontendBase}/pages/verify-status.html?status=expired`);
     }
 
     const row = result.rows[0];
 
     if (row.verified) {
-      return res.status(200).json({ message: 'Email already verified. You can log in.' });
+      const frontendBase = (process.env.FRONTEND_URL || process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+      return res.redirect(`${frontendBase}/pages/verify-status.html?status=already`);
     }
 
     await pool.query('BEGIN');
@@ -127,7 +129,9 @@ async function verifyEmail(req, res) {
     await pool.query('COMMIT');
 
     reqLog.info({ userId: row.user_id }, 'Email verified');
-    res.json({ message: 'Email verified successfully! You can now log in.' });
+
+    const frontendBase = (process.env.FRONTEND_URL || process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    return res.redirect(`${frontendBase}/pages/login.html?verified=1`);
   } catch (err) {
     await pool.query('ROLLBACK').catch(() => {});
     reqLog.error({ err }, 'verifyEmail error');

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeHub – Email Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .verify-status-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 24px;
+    }
+    .verify-status-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .verify-status-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .verify-status-card h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .verify-status-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .verify-status-card .btn {
+      display: inline-block;
+      width: 100%;
+    }
+    .verify-already p {
+      margin-bottom: 12px;
+    }
+    .verify-already .btn-secondary {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body class="auth-page">
+<div class="verify-status-wrap">
+  <div class="verify-status-card" id="card-expired" style="display:none;">
+    <span class="verify-status-icon">⏰</span>
+    <h1>Link Expired</h1>
+    <p>This verification link has already been used or has expired. Links are valid for 24 hours.</p>
+    <p>If you haven't verified your email yet, request a new link below.</p>
+    <a href="/pages/login.html" class="btn btn-primary">Back to Login</a>
+  </div>
+
+  <div class="verify-status-card verify-already" id="card-already" style="display:none;">
+    <span class="verify-status-icon">✅</span>
+    <h1>Already Verified</h1>
+    <p>Your email has already been verified.</p>
+    <a href="/pages/login.html" class="btn btn-primary">Log In</a>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('status');
+
+  if (status === 'already') {
+    document.getElementById('card-already').style.display = 'block';
+  } else {
+    // default: expired / invalid
+    document.getElementById('card-expired').style.display = 'block';
+  }
+</script>
+</body>
+</html>
