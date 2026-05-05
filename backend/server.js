@@ -9,6 +9,7 @@ require('dotenv').config();
 const logger = require('./config/logger');
 const pool   = require('./config/db');
 const profileRouter = require('./routes/profile');
+const { startReminderScheduler, stopReminderScheduler } = require('./reminderScheduler');
 
 // ── Required env vars ─────────────────────────────────────────
 const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
@@ -306,6 +307,7 @@ app.use('/api/expenses',  apiLimiter, require('./routes/expenses'));
 app.use('/api/health',    apiLimiter, require('./routes/health'));
 app.use('/api/reminders', apiLimiter, require('./routes/reminders'));
 app.use('/api/dashboard', apiLimiter, require('./routes/dashboard'));
+app.use('/api/push',      apiLimiter, require('./routes/push'));
 
 // ── Catch-all: serve frontend ─────────────────────────────────
 app.get('*', (req, res) => {
@@ -344,12 +346,14 @@ const PORT   = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, 'LifeHub server started');
   startCleanupScheduler();
+  startReminderScheduler();
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────
 async function shutdown(signal) {
   logger.info({ signal }, 'Shutting down gracefully');
   if (_cleanupInterval) clearInterval(_cleanupInterval);
+  stopReminderScheduler();
   server.close(async () => {
     try {
       await pool.end();
