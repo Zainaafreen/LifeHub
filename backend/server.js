@@ -76,6 +76,8 @@ app.use(helmet({
       connectSrc:  [
         "'self'",
         'https://lifehub-backend-n0y5.onrender.com', // ← add backend URL here
+        'https://fcm.googleapis.com',        // ← ADD THIS
+        'https://*.googleapis.com',
       ],
     },
   },
