@@ -68,13 +68,45 @@ async function subscribeToPush(swRegistration) {
 }
 
 async function savePushSubscription(subscription) {
+
   try {
+
+    // Ensure fresh CSRF token exists before POST
+    if (typeof loadCsrfToken === 'function') {
+      await loadCsrfToken();
+    }
+
+    const subJson = subscription.toJSON();
+
     const res = await apiFetch('/push/subscribe', {
       method: 'POST',
-      body:   JSON.stringify(subscription.toJSON()),
+      body: JSON.stringify(subJson),
     });
-    return res && res.ok;
-  } catch { return false; }
+
+    if (!res || !res.ok) {
+
+      const body = await res?.text();
+
+      console.error(
+        '[Push] Subscribe failed:',
+        res?.status,
+        body
+      );
+
+      return false;
+    }
+
+    return true;
+
+  } catch (err) {
+
+    console.error(
+      '[Push] savePushSubscription threw:',
+      err
+    );
+
+    return false;
+  }
 }
 
 /**
