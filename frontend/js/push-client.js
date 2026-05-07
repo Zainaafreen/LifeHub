@@ -55,9 +55,16 @@ async function subscribeToPush(swRegistration) {
     });
     return subscription;
   } catch (err) {
-    console.warn('Push subscribe failed:', err);
-    return null;
+    if (err.name === 'AbortError') {
+      showToast(
+        'Push notifications unavailable in Brave. Enable "Use Google services for push messaging" in Brave settings, or try Chrome/Edge. Your browser or network may also be blocking push services.',
+        'warning'
+      );
+    } else {
+      console.error('[Push] subscribe failed:', err.name, err.message);
+    }
   }
+  return null;
 }
 
 async function savePushSubscription(subscription) {
