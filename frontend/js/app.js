@@ -734,18 +734,21 @@ function stopGlobalReminderFallback() {
 }
 
 function _promptNotificationPermission() {
-  // Show a subtle persistent banner on every page (not just reminders)
-  // until the user makes a decision. Browsers require a user gesture to
-  // call requestPermission(), so we show a banner with a button rather
-  // than calling it automatically.
+  // Show a subtle persistent banner on pages that don't already provide
+  // their own notification prompt UI.
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'default') return;
 
   // Don't show on the login page
   if (window.location.pathname.includes('login')) return;
 
+  // The reminders page already has its own inline notification banner.
+  // Keep only that banner there to avoid duplicate "Enable" prompts.
+  if (document.getElementById('notif-banner')) return;
+
   // Don't show if banner already exists
   if (document.getElementById('global-notif-banner')) return;
+
 
   const banner = document.createElement('div');
   banner.id = 'global-notif-banner';

@@ -63,60 +63,87 @@ async function sendDuePushNotifications() {
     });
 
     // Send to each subscribed device
-    const sendPromises = subscriptions.map(async (sub) => {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        );
-      } catch (err) {
-        // 410 Gone = subscription expired/revoked — clean it up
-        if (err.statusCode === 410) {
-          logger.info({ endpoint: sub.endpoint }, 'reminderScheduler: removing expired subscription');
-          await pool.query(
-            'DELETE FROM push_subscriptions WHERE endpoint = $1',
-            [sub.endpoint]
-          ).catch(() => {});
-        } else {
-          logger.warn(
-            { err, reminderId: reminder.id },
-            'reminderScheduler: push send failed'
-          );
-          throw err;
+    const successfulDeliveries = new Set();
+
+// Send to each subscribed device
+const sendPromises = subscriptions.map(async (sub) => {
+
+  try {
+
+    await webpush.sendNotification(
+      {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
         }
-      }
-    });
-
-    const results = await Promise.allSettled(sendPromises);
-
-results.forEach((r) => {
-
-  if (r.status === 'rejected') {
-
-    logger.error(
-      { err: r.reason },
-      'reminderScheduler: push delivery failed'
+      },
+      payload
     );
 
-  } else {
+    // Mark success
+    successfulDeliveries.add(reminder.id);
 
     logger.info(
       'reminderScheduler: push delivered successfully'
     );
 
-  }
+  } catch (err) {
 
+    // 410 Gone = subscription expired/revoked
+    if (err.statusCode === 410) {
+
+      logger.info(
+        { endpoint: sub.endpoint },
+        'reminderScheduler: removing expired subscription'
+      );
+
+      await pool.query(
+        'DELETE FROM push_subscriptions WHERE endpoint = $1',
+        [sub.endpoint]
+      ).catch(() => {});
+
+    } else {
+
+      logger.warn(
+        {
+          err: err.message,
+          reminderId: reminder.id
+        },
+        'reminderScheduler: push send failed'
+      );
+
+    }
+  }
 });
 
-    // Mark the reminder as notified so it doesn't fire again
-    try {
-      await pool.query(
-        'UPDATE reminders SET notified = TRUE WHERE id = $1',
-        [reminder.id]
-      );
-    } catch (err) {
-      logger.error({ err, reminderId: reminder.id }, 'reminderScheduler: failed to mark notified');
-    }
+await Promise.allSettled(sendPromises);
+
+// Only mark reminder notified if:
+// 1. At least one push succeeded
+// OR
+// 2. User has no subscriptions
+if (
+  successfulDeliveries.has(reminder.id) ||
+  subscriptions.length === 0
+) {
+
+  try {
+
+    await pool.query(
+      'UPDATE reminders SET notified = TRUE WHERE id = $1',
+      [reminder.id]
+    );
+
+  } catch (err) {
+
+    logger.error(
+      { err, reminderId: reminder.id },
+      'reminderScheduler: failed to mark notified'
+    );
+
+  }
+}
   }
 }
 
