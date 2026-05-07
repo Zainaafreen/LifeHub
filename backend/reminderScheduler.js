@@ -78,12 +78,35 @@ async function sendDuePushNotifications() {
             [sub.endpoint]
           ).catch(() => {});
         } else {
-          logger.warn({ err, reminderId: reminder.id }, 'reminderScheduler: push send failed');
+          logger.warn(
+            { err, reminderId: reminder.id },
+            'reminderScheduler: push send failed'
+          );
+          throw err;
         }
       }
     });
 
-    await Promise.allSettled(sendPromises);
+    const results = await Promise.allSettled(sendPromises);
+
+results.forEach((r) => {
+
+  if (r.status === 'rejected') {
+
+    logger.error(
+      { err: r.reason },
+      'reminderScheduler: push delivery failed'
+    );
+
+  } else {
+
+    logger.info(
+      'reminderScheduler: push delivered successfully'
+    );
+
+  }
+
+});
 
     // Mark the reminder as notified so it doesn't fire again
     try {
