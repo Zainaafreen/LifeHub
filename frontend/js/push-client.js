@@ -109,21 +109,24 @@ async function savePushSubscription(subscription) {
   }
 }
 
-/**
- * requestNotificationPermission — replaces the version in reminders.js.
- *
- * Call this wherever you currently call requestNotificationPermission().
- * It:
- *   1. Asks the user for notification permission (browser prompt)
- *   2. Registers the Service Worker
- *   3. Subscribes to Web Push
- *   4. Saves the subscription to your backend
- */
 async function requestNotificationPermission() {
   if (!('Notification' in window)) {
     showToast('This browser does not support notifications', 'warning');
     return;
   }
+
+  const isBrave =
+  navigator.brave &&
+  await navigator.brave.isBrave();
+
+if (isBrave) {
+
+  showToast(
+    'Brave browser may block background notifications. For reliable alerts, use Chrome or Edge.',
+    'warning'
+  );
+
+}
 
   // Step 1: ask for permission
   const permission = await Notification.requestPermission();
